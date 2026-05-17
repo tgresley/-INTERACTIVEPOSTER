@@ -173,11 +173,6 @@
       box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
     }
 
-    /*
-      FLOATING BUTTONS:
-      Hide Text + Randomise Asterisk + Hide Asterisk + Save Poster
-    */
-
     .floating-buttons {
       position: fixed;
       inset: 0;
@@ -271,12 +266,6 @@
       right: 12vw;
       top: 32vh;
     }
-
-    /*
-      SAVE BUTTON:
-      This stays floating, but uses the control-panel box style.
-      It is NOT an asterisk mask.
-    */
 
     .floating-buttons button.save-floating-button {
       width: clamp(120px, 11vw, 190px);
@@ -535,7 +524,28 @@
 
     let logoColourInput;
 
+    /*
+      BACKGROUND IMAGES:
+      These now lazy-load only when selected.
+      Make sure your files are actually saved as .jpeg in the background folder.
+    */
+    let bgImageFiles = [
+      "/background/amandalapore.jpeg",
+      "/background/claudecahun.jpeg",
+      "/background/crystallove.jpeg",
+      "/background/gradient1.jpeg",
+      "/background/gradient2.jpeg",
+      "/background/greerlankton.jpeg",
+      "/background/kingmollasses.jpeg",
+      "/background/MARSHA.jpeg",
+      "/background/reederickson.jpeg",
+      "/background/rihannaleejorda.jpeg"
+    ];
+
     let bgImages = [];
+    let currentBgIndex = null;
+    let currentBgImage = null;
+    let isBgLoading = false;
 
     let logoBlack;
     let logoWhite;
@@ -575,16 +585,10 @@
     let showAsterisk = true;
 
     function preload() {
-      bgImages[0] = loadImage("/background/amandalapore.png");
-      bgImages[1] = loadImage("/background/claudecahun.png");
-      bgImages[2] = loadImage("/background/crystallove.png");
-      bgImages[3] = loadImage("/background/gradient1.png");
-      bgImages[4] = loadImage("/background/gradient2.png");
-      bgImages[5] = loadImage("/background/greerlankton.png");
-      bgImages[6] = loadImage("/background/kingmollasses.png");
-      bgImages[7] = loadImage("/background/MARSHA.png");
-      bgImages[8] = loadImage("/background/reederickson.png");
-      bgImages[9] = loadImage("/background/rihannaleejorda.png");
+      /*
+        Do NOT load background images here.
+        They are loaded on demand in loadSelectedBackground().
+      */
 
       asteriskImages[0] = loadImage("./asterisks/asterisk1.svg");
       asteriskImages[1] = loadImage("./asterisks/asterisk2.svg");
@@ -607,6 +611,30 @@
           console.error("Could not load SVG:", asteriskSVGFiles[i], error);
         }
       }
+    }
+
+    function loadSelectedBackground(index) {
+      if (bgImages[index]) {
+        currentBgImage = bgImages[index];
+        currentBgIndex = index;
+        isBgLoading = false;
+        return;
+      }
+
+      isBgLoading = true;
+
+      bgImages[index] = loadImage(
+        bgImageFiles[index],
+        function (loadedImg) {
+          currentBgImage = loadedImg;
+          currentBgIndex = index;
+          isBgLoading = false;
+        },
+        function () {
+          console.error("Could not load background image:", bgImageFiles[index]);
+          isBgLoading = false;
+        }
+      );
     }
 
     function setup() {
@@ -638,7 +666,12 @@
         recolouredAsteriskCache = {};
       });
 
+      bgImageSelect.changed(function () {
+        loadSelectedBackground(Number(bgImageSelect.value()));
+      });
+
       loadAsteriskSVGText();
+      loadSelectedBackground(Number(bgImageSelect.value()));
 
       textAlign(CENTER, CENTER);
       rectMode(CORNER);
@@ -699,7 +732,12 @@
 
     function drawBackgroundImage() {
       let selectedIndex = Number(bgImageSelect.value());
-      let img = bgImages[selectedIndex];
+
+      if (selectedIndex !== currentBgIndex && !isBgLoading) {
+        loadSelectedBackground(selectedIndex);
+      }
+
+      let img = currentBgImage;
 
       if (img) {
         imageMode(CORNER);
@@ -727,6 +765,17 @@
         image(img, drawX, drawY, drawWidth, drawHeight);
       } else {
         background(240);
+
+        if (isBgLoading) {
+          push();
+          fill(0);
+          noStroke();
+          textFont("DegularSB");
+          textSize(32);
+          textAlign(CENTER, CENTER);
+          text("loading image...", width / 2, height / 2);
+          pop();
+        }
       }
     }
 
@@ -811,11 +860,6 @@
       push();
       imageMode(CENTER);
 
-      /*
-        This prevents the blank poster bug.
-        Browser Images use drawImage().
-        p5 images use p5's image().
-      */
       if (img instanceof HTMLImageElement) {
         if (!img.complete || img.naturalWidth === 0) {
           pop();
