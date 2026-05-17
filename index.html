@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Interactive Poster Maker</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    @font-face {
+      font-family: "Boucle";
+      src: url("./typefaces/boucle.otf") format("opentype");
+    }
+
+    @font-face {
+      font-family: "Bunny";
+      src: url("./typefaces/bunny.otf") format("opentype");
+    }
+
+    @font-face {
+      font-family: "Carrepair";
+      src: url("./typefaces/carrepair.otf") format("opentype");
+    }
+
+    @font-face {
+      font-family: "Dindong";
+      src: url("./typefaces/dindong.woff") format("woff");
+    }
+
+    @font-face {
+      font-family: "Marsha";
+      src: url("./typefaces/marsha.otf") format("opentype");
+    }
+
+    @font-face {
+      font-family: "Insolent";
+      src: url("./typefaces/insolent.woff") format("woff");
+    }
+
+    @font-face {
+      font-family: "Nudles";
+      src: url("./typefaces/nudles.woff") format("woff");
+    }
+
+    @font-face {
+      font-family: "Picnic";
+      src: url("./typefaces/picnic.woff") format("woff");
+    }
+
+    @font-face {
+      font-family: "Readme";
+      src: url("./typefaces/readme.woff") format("woff");
+    }
+
+    @font-face {
+      font-family: "star";
+      src: url("./typefaces/star.otf") format("opentype");
+    }
+
+    @font-face {
+      font-family: "DegularSB";
+      src: url("./typefaces/degularsb.otf") format("opentype");
+    }
+
+    :root {
+      --panel-width: 300px;
+      --canvas-display-width: 600px;
+      --canvas-display-height: 850px;
+    }
+
+    body {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "DegularSB", Arial, Helvetica, sans-serif;
+      color: #111;
+      display: flex;
+    }
+
+    .controls {
+      width: var(--panel-width);
+      height: 100vh;
+      padding: 18px;
+      background: #ffffff;
+      border-right: 1px solid #000000;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .controls h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      font-weight: normal;
+      color: #000000;
+    }
+
+    .control-section {
+      padding: 10px;
+      background: #ffffff;
+      border: 1px solid #000000;
+      border-radius: 12px;
+      color: #000000;
+    }
+
+    .section-title {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      color: #000000;
+      white-space: nowrap;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 7px;
+      border: 1px solid #000000;
+      background: #ffffff;
+      color: #000000;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    input[type="range"] {
+      padding: 0;
+      accent-color: #000000;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: calc(100vw - var(--panel-width));
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    canvas {
+      width: var(--canvas-display-width) !important;
+      height: var(--canvas-display-height) !important;
+      display: block;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    /*
+      FLOATING BUTTONS:
+      Hide Text + Randomise Asterisk + Hide Asterisk + Save Poster
+    */
+
+    .floating-buttons {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .floating-buttons button {
+      position: absolute;
+      pointer-events: auto;
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-family: "DegularSB", Arial, Helvetica, sans-serif;
+      font-size: clamp(8px, 0.8vw, 11px);
+      line-height: 1.05;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      color: #ffffff;
+      z-index: 20;
+    }
+
+    .floating-buttons button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--button-colour, #000000);
+
+      -webkit-mask-image: var(--button-shape);
+      mask-image: var(--button-shape);
+
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+
+      -webkit-mask-position: center;
+      mask-position: center;
+
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
+      z-index: 1;
+    }
+
+    .floating-buttons button span {
+      position: relative;
+      z-index: 2;
+      color: #ffffff;
+      -webkit-text-fill-color: #ffffff;
+      pointer-events: none;
+    }
+
+    .floating-buttons button:hover {
+      transform: scale(1.06) rotate(-4deg);
+      --button-colour: aqua;
+    }
+
+    .floating-buttons button:hover span {
+      color: #000000;
+      -webkit-text-fill-color: #000000;
+    }
+
+    .text-button {
+      --button-shape: url("./asterisks/asterisk6.svg");
+      --button-colour: #000000;
+      width: clamp(105px, 10vw, 170px);
+      height: clamp(105px, 10vw, 170px);
+      padding: 34px 24px;
+      left: 24vw;
+      bottom: 12vh;
+    }
+
+    .randomise-button {
+      --button-shape: url("./asterisks/asterisk2.svg");
+      --button-colour: #000000;
+      width: clamp(120px, 10vw, 210px);
+      height: clamp(120px, 10vw, 210px);
+      padding: 44px 30px;
+      left: 30vw;
+      top: 10vh;
+    }
+
+    .asterisk-button {
+      --button-shape: url("./asterisks/asterisk3.svg");
+      --button-colour: #000000;
+      width: clamp(105px, 14vw, 190px);
+      height: clamp(105px, 14vw, 190px);
+      padding: 34px 24px;
+      right: 12vw;
+      top: 32vh;
+    }
+
+    /*
+      SAVE BUTTON:
+      This stays floating, but uses the control-panel box style.
+      It is NOT an asterisk mask.
+    */
+
+    .floating-buttons button.save-floating-button {
+      width: clamp(120px, 11vw, 190px);
+      height: auto;
+      min-height: 42px;
+      padding: 10px 14px;
+
+      right: 4vw;
+      bottom: 4vh;
+
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 12px;
+
+      color: #000000;
+    }
+
+    .floating-buttons button.save-floating-button::before {
+      display: none;
+      content: none;
+    }
+
+    .floating-buttons button.save-floating-button span,
+    .floating-buttons button.save-floating-button .save-button-type {
+      color: #000000;
+      -webkit-text-fill-color: #000000;
+      font-family: "Marsha", sans-serif;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    .floating-buttons button.save-floating-button:hover {
+      background: aqua;
+      border-color: #000000;
+      transform: scale(1.06) rotate(-4deg);
+    }
+
+    .floating-buttons button.save-floating-button:hover span,
+    .floating-buttons button.save-floating-button:hover .save-button-type {
+      color: #000000;
+      -webkit-text-fill-color: #000000;
+    }
+
+    .text-button-type {
+      font-family: "Insolent", sans-serif;
+      font-size: 16px;
+    }
+
+    .randomise-button-type {
+      font-family: "Readme", sans-serif;
+      font-size: 13px;
+    }
+
+    .asterisk-button-type {
+      font-family: "Picnic", sans-serif;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="controls">
+    <h1>T*art!Poster</h1>
+
+    <div class="control-section font-panel">
+      <p class="section-title">TYPEFACES</p>
+
+      <div class="field">
+        <label>"I" font:</label>
+        <select id="fontSelect1">
+          <option value="Boucle" selected>Boucle</option>
+          <option value="Bunny">Bunny</option>
+          <option value="Carrepair">Carrepair</option>
+          <option value="Dindong">Dindong</option>
+          <option value="Marsha">Marsha</option>
+          <option value="Insolent">Insolent</option>
+          <option value="Nudles">Nudles</option>
+          <option value="Picnic">Picnic</option>
+          <option value="Readme">Readme</option>
+          <option value="star">star</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>"support" font:</label>
+        <select id="fontSelect2">
+          <option value="Boucle">Boucle</option>
+          <option value="Bunny" selected>Bunny</option>
+          <option value="Carrepair">Carrepair</option>
+          <option value="Dindong">Dindong</option>
+          <option value="Marsha">Marsha</option>
+          <option value="Insolent">Insolent</option>
+          <option value="Nudles">Nudles</option>
+          <option value="Picnic">Picnic</option>
+          <option value="Readme">Readme</option>
+          <option value="star">star</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>"local" font:</label>
+        <select id="fontSelect3">
+          <option value="Boucle">Boucle</option>
+          <option value="Bunny">Bunny</option>
+          <option value="Carrepair" selected>Carrepair</option>
+          <option value="Dindong">Dindong</option>
+          <option value="Marsha">Marsha</option>
+          <option value="Insolent">Insolent</option>
+          <option value="Nudles">Nudles</option>
+          <option value="Picnic">Picnic</option>
+          <option value="Readme">Readme</option>
+          <option value="star">star</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>"t*artists!" font:</label>
+        <select id="fontSelect4">
+          <option value="Boucle">Boucle</option>
+          <option value="Bunny">Bunny</option>
+          <option value="Carrepair">Carrepair</option>
+          <option value="Dindong">Dindong</option>
+          <option value="Marsha">Marsha</option>
+          <option value="Insolent">Insolent</option>
+          <option value="Nudles">Nudles</option>
+          <option value="Picnic" selected>Picnic</option>
+          <option value="Readme">Readme</option>
+          <option value="star">star</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="control-section text-panel">
+      <p class="section-title">Text</p>
+
+      <div class="field">
+        <label>Select Text Colour:</label>
+        <select id="textColour">
+          <option value="#f9ed32" selected>YELLOW</option>
+          <option value="#2e3192">BLUE</option>
+          <option value="#2effed">CYAN</option>
+          <option value="#d072f5">PURPLE</option>
+          <option value="#ff4a9b">PINK</option>
+          <option value="#ed1c24">RED</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Select Box Colour:</label>
+        <select id="textBoxColour">
+          <option value="#2e3192" selected>BLUE</option>
+          <option value="#2effed">CYAN</option>
+          <option value="#d072f5">PURPLE</option>
+          <option value="#f9ed32">YELLOW</option>
+          <option value="#ff4a9b">PINK</option>
+          <option value="#ed1c24">RED</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Select Size:</label>
+        <input id="textSize" type="range" min="80" max="180" value="120" />
+      </div>
+    </div>
+
+    <div class="control-section image-panel">
+      <p class="section-title">BACKGROUND</p>
+
+      <div class="field">
+        <label>Select Image:</label>
+        <select id="bgImageSelect">
+          <option value="0">lapore</option>
+          <option value="1">cahun</option>
+          <option value="2">love</option>
+          <option value="3">colour</option>
+          <option value="4">colour2</option>
+          <option value="5">lankton</option>
+          <option value="6">mollasses</option>
+          <option value="7">johnson</option>
+          <option value="8">erickson</option>
+          <option value="9">jordan</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="control-section asterisk-panel">
+      <p class="section-title">Asterisk</p>
+
+      <div class="field">
+        <label>Select Colour:</label>
+        <select id="asteriskColour">
+          <option value="#000000" selected>BLACK</option>
+          <option value="#2e3192">BLUE</option>
+          <option value="#2effed">CYAN</option>
+          <option value="#d072f5">PURPLE</option>
+          <option value="#f9ed32">YELLOW</option>
+          <option value="#ff4a9b">PINK</option>
+          <option value="#ed1c24">RED</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Select Size:</label>
+        <input id="asteriskSize" type="range" min="160" max="1520" value="640" />
+      </div>
+    </div>
+
+    <div class="control-section logo-panel">
+      <p class="section-title">Logo</p>
+
+      <div class="field">
+        <label>Select Colour:</label>
+        <select id="logoColour">
+          <option value="black" selected>BLACK</option>
+          <option value="white">WHITE</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap"></div>
+
+  <div class="floating-buttons">
+    <button class="text-button" id="toggleTextButton" onclick="toggleText()">
+      <span class="text-button-type">Hide Text</span>
+    </button>
+
+    <button class="randomise-button" onclick="randomiseAsterisk()">
+      <span class="randomise-button-type">asterisk</span>
+    </button>
+
+    <button class="asterisk-button" id="toggleAsteriskButton" onclick="toggleAsterisk()">
+      <span class="asterisk-button-type">Hide Asterisk</span>
+    </button>
+
+    <button class="save-floating-button" onclick="savePoster()">
+      <span class="save-button-type">Save !</span>
+    </button>
+  </div>
+
+  <script>
+    let fontSelect1;
+    let fontSelect2;
+    let fontSelect3;
+    let fontSelect4;
+
+    let textColourInput;
+    let textBoxColourInput;
+    let textSizeSlider;
+
+    let bgImageSelect;
+
+    let asteriskColourInput;
+    let asteriskSizeSlider;
+
+    let logoColourInput;
+
+    let bgImages = [];
+
+    let logoBlack;
+    let logoWhite;
+
+    let asteriskSVGFiles = [
+      "./asterisks/asterisk1.svg",
+      "./asterisks/asterisk2.svg",
+      "./asterisks/asterisk3.svg",
+      "./asterisks/asterisk4.svg",
+      "./asterisks/asterisk5.svg",
+      "./asterisks/asterisk6.svg",
+      "./asterisks/asterisk7.svg"
+    ];
+
+    let asteriskImages = [];
+    let asteriskSVGText = [];
+    let recolouredAsteriskCache = {};
+    let currentAsteriskIndex = 0;
+
+    let textScanLayer;
+
+    let fixedWords = ["I", "support", "local", "t*artists!"];
+
+    let fixedLineSpacing = 360;
+    let fixedBoxOverhang = 28;
+
+    let logoWidth = 184;
+    let logoMargin = 64;
+
+    let cornerText = "* trans and gender diverse art fair * \n * jun 2026 * naarm *";
+    let cornerTextSize = 24;
+    let cornerTextMargin = 64;
+
+    let forceCapsFonts = ["Marsha", "Carrepair"];
+
+    let showText = true;
+    let showAsterisk = true;
+
+    function preload() {
+      bgImages[0] = loadImage("./background/amandalapore.png");
+      bgImages[1] = loadImage("./background/claudecahun.png");
+      bgImages[2] = loadImage("./background/crystallove.png");
+      bgImages[3] = loadImage("./background/gradient1.png");
+      bgImages[4] = loadImage("./background/gradient2.png");
+      bgImages[5] = loadImage("./background/greerlankton.png");
+      bgImages[6] = loadImage("./background/kingmollasses.png");
+      bgImages[7] = loadImage("./background/MARSHA.png");
+      bgImages[8] = loadImage("./background/reederickson.png");
+      bgImages[9] = loadImage("./background/rihannaleejorda.png");
+
+      asteriskImages[0] = loadImage("./asterisks/asterisk1.svg");
+      asteriskImages[1] = loadImage("./asterisks/asterisk2.svg");
+      asteriskImages[2] = loadImage("./asterisks/asterisk3.svg");
+      asteriskImages[3] = loadImage("./asterisks/asterisk4.svg");
+      asteriskImages[4] = loadImage("./asterisks/asterisk5.svg");
+      asteriskImages[5] = loadImage("./asterisks/asterisk6.svg");
+      asteriskImages[6] = loadImage("./asterisks/asterisk7.svg");
+
+      logoBlack = loadImage("./logo/logo-black.svg");
+      logoWhite = loadImage("./logo/logo-white.svg");
+    }
+
+    async function loadAsteriskSVGText() {
+      for (let i = 0; i < asteriskSVGFiles.length; i++) {
+        try {
+          let response = await fetch(asteriskSVGFiles[i]);
+          asteriskSVGText[i] = await response.text();
+        } catch (error) {
+          console.error("Could not load SVG:", asteriskSVGFiles[i], error);
+        }
+      }
+    }
+
+    function setup() {
+      pixelDensity(1);
+
+      let canvas = createCanvas(1200, 1700);
+      canvas.parent("canvasWrap");
+
+      textScanLayer = createGraphics(width, height);
+      textScanLayer.pixelDensity(1);
+
+      fontSelect1 = select("#fontSelect1");
+      fontSelect2 = select("#fontSelect2");
+      fontSelect3 = select("#fontSelect3");
+      fontSelect4 = select("#fontSelect4");
+
+      textColourInput = select("#textColour");
+      textBoxColourInput = select("#textBoxColour");
+      textSizeSlider = select("#textSize");
+
+      bgImageSelect = select("#bgImageSelect");
+
+      asteriskColourInput = select("#asteriskColour");
+      asteriskSizeSlider = select("#asteriskSize");
+
+      logoColourInput = select("#logoColour");
+
+      asteriskColourInput.changed(function () {
+        recolouredAsteriskCache = {};
+      });
+
+      loadAsteriskSVGText();
+
+      textAlign(CENTER, CENTER);
+      rectMode(CORNER);
+      imageMode(CENTER);
+
+      updateResponsiveLayout();
+    }
+
+    function windowResized() {
+      updateResponsiveLayout();
+    }
+
+    function updateResponsiveLayout() {
+      let panelWidth = 300;
+      let availableW = windowWidth - panelWidth;
+      let availableH = windowHeight;
+
+      let canvasW = min(
+        600,
+        availableW * 0.75,
+        availableH * 0.86 * 600 / 850
+      );
+
+      canvasW = max(canvasW, 230);
+
+      document.documentElement.style.setProperty("--canvas-display-width", canvasW + "px");
+      document.documentElement.style.setProperty("--canvas-display-height", canvasW * 850 / 600 + "px");
+    }
+
+    function draw() {
+      drawBackgroundImage();
+
+      if (showAsterisk) {
+        drawAsteriskSVG();
+      }
+
+      if (showText) {
+        drawPosterText();
+      }
+
+      drawLogo();
+      drawCornerText();
+    }
+
+    function toggleText() {
+      showText = !showText;
+
+      let buttonText = document.querySelector("#toggleTextButton span");
+      buttonText.textContent = showText ? "Hide Text" : "Show Text";
+    }
+
+    function toggleAsterisk() {
+      showAsterisk = !showAsterisk;
+
+      let buttonText = document.querySelector("#toggleAsteriskButton span");
+      buttonText.textContent = showAsterisk ? "Hide Asterisk" : "Show Asterisk";
+    }
+
+    function drawBackgroundImage() {
+      let selectedIndex = Number(bgImageSelect.value());
+      let img = bgImages[selectedIndex];
+
+      if (img) {
+        imageMode(CORNER);
+
+        let canvasRatio = width / height;
+        let imageRatio = img.width / img.height;
+
+        let drawWidth;
+        let drawHeight;
+        let drawX;
+        let drawY;
+
+        if (imageRatio > canvasRatio) {
+          drawHeight = height;
+          drawWidth = height * imageRatio;
+          drawX = (width - drawWidth) / 2;
+          drawY = 0;
+        } else {
+          drawWidth = width;
+          drawHeight = width / imageRatio;
+          drawX = 0;
+          drawY = (height - drawHeight) / 2;
+        }
+
+        image(img, drawX, drawY, drawWidth, drawHeight);
+      } else {
+        background(240);
+      }
+    }
+
+    function recolourSVG(svgText, newColour) {
+      let recoloured = svgText;
+
+      recoloured = recoloured
+        .replaceAll("#000000", newColour)
+        .replaceAll("#000", newColour)
+        .replaceAll("#111111", newColour)
+        .replaceAll("#111", newColour)
+        .replaceAll("black", newColour)
+        .replaceAll("rgb(0,0,0)", newColour)
+        .replaceAll("rgb(0, 0, 0)", newColour);
+
+      recoloured = recoloured.replace(/fill\s*:\s*(?!none)[^;"}]+/g, "fill: " + newColour);
+      recoloured = recoloured.replace(/stroke\s*:\s*(?!none)[^;"}]+/g, "stroke: " + newColour);
+
+      recoloured = recoloured.replace(/fill="(?!none)[^"]*"/g, 'fill="' + newColour + '"');
+      recoloured = recoloured.replace(/fill='(?!none)[^']*'/g, "fill='" + newColour + "'");
+      recoloured = recoloured.replace(/stroke="(?!none)[^"]*"/g, 'stroke="' + newColour + '"');
+      recoloured = recoloured.replace(/stroke='(?!none)[^']*'/g, "stroke='" + newColour + "'");
+
+      recoloured = recoloured.replace(
+        "<svg",
+        '<svg fill="' + newColour + '" color="' + newColour + '"'
+      );
+
+      return recoloured;
+    }
+
+    function getRecolouredAsteriskImage(index, colour) {
+      let svgText = asteriskSVGText[index];
+
+      if (!svgText) {
+        return asteriskImages[index];
+      }
+
+      let cacheKey = index + "-" + colour;
+
+      if (recolouredAsteriskCache[cacheKey]) {
+        return recolouredAsteriskCache[cacheKey];
+      }
+
+      let recolouredSVG = recolourSVG(svgText, colour);
+
+      let svgBlob = new Blob([recolouredSVG], {
+        type: "image/svg+xml"
+      });
+
+      let url = URL.createObjectURL(svgBlob);
+      let img = new Image();
+
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
+
+      recolouredAsteriskCache[cacheKey] = img;
+
+      return img;
+    }
+
+    function drawAsteriskSVG() {
+      let size = Number(asteriskSizeSlider.value());
+      let asteriskColour = asteriskColourInput.value();
+
+      let img = getRecolouredAsteriskImage(currentAsteriskIndex, asteriskColour);
+
+      if (!img) return;
+
+      let imgW = img.naturalWidth || img.width;
+      let imgH = img.naturalHeight || img.height;
+
+      if (!imgW || !imgH) return;
+
+      let ratio = imgH / imgW;
+      let drawW = size;
+      let drawH = size * ratio;
+
+      push();
+      imageMode(CENTER);
+
+      /*
+        This prevents the blank poster bug.
+        Browser Images use drawImage().
+        p5 images use p5's image().
+      */
+      if (img instanceof HTMLImageElement) {
+        if (!img.complete || img.naturalWidth === 0) {
+          pop();
+          return;
+        }
+
+        drawingContext.drawImage(
+          img,
+          width / 2 - drawW / 2,
+          height / 2 - drawH / 2,
+          drawW,
+          drawH
+        );
+      } else {
+        image(img, width / 2, height / 2, drawW, drawH);
+      }
+
+      pop();
+    }
+
+    function randomiseAsterisk() {
+      let nextIndex = floor(random(asteriskSVGFiles.length));
+
+      if (asteriskSVGFiles.length > 1) {
+        while (nextIndex === currentAsteriskIndex) {
+          nextIndex = floor(random(asteriskSVGFiles.length));
+        }
+      }
+
+      currentAsteriskIndex = nextIndex;
+      recolouredAsteriskCache = {};
+    }
+
+    function drawLogo() {
+      let selectedLogo = logoColourInput.value() === "white" ? logoWhite : logoBlack;
+
+      if (!selectedLogo) return;
+
+      let ratio = selectedLogo.height / selectedLogo.width;
+      let drawW = logoWidth;
+      let drawH = logoWidth * ratio;
+
+      let x = logoMargin;
+      let y = height - logoMargin - drawH;
+
+      imageMode(CORNER);
+      image(selectedLogo, x, y, drawW, drawH);
+    }
+
+    function drawCornerText() {
+      let logoColour = logoColourInput.value();
+      let cornerColour = logoColour === "white" ? "#ffffff" : "#000000";
+
+      push();
+
+      fill(cornerColour);
+      noStroke();
+
+      textFont("DegularSB");
+      textSize(cornerTextSize);
+      textStyle(NORMAL);
+      textAlign(RIGHT, BOTTOM);
+      textLeading(cornerTextSize * 1.25);
+
+      text(
+        cornerText,
+        width - cornerTextMargin,
+        height - cornerTextMargin
+      );
+
+      pop();
+    }
+
+    function drawPosterText() {
+      let textColour = textColourInput.value();
+      let textBoxColour = textBoxColourInput.value();
+      let size = Number(textSizeSlider.value());
+
+      let fonts = [
+        fontSelect1.value(),
+        fontSelect2.value(),
+        fontSelect3.value(),
+        fontSelect4.value()
+      ];
+
+      let totalHeight = (fixedWords.length - 1) * fixedLineSpacing;
+      let startY = height / 2 - totalHeight / 2;
+
+      for (let i = 0; i < fixedWords.length; i++) {
+        let word = fixedWords[i];
+        let chosenFont = fonts[i];
+
+        if (forceCapsFonts.includes(chosenFont)) {
+          word = word.toUpperCase();
+        }
+
+        let x = width / 2;
+        let y = startY + i * fixedLineSpacing;
+
+        let bounds = getRealTextBounds(word, chosenFont, size, x, y);
+
+        noStroke();
+
+        if (bounds) {
+          fill(textBoxColour);
+          rect(
+            bounds.x - fixedBoxOverhang,
+            bounds.y,
+            bounds.w + fixedBoxOverhang * 2,
+            bounds.h
+          );
+        }
+
+        fill(textColour);
+        textFont(chosenFont);
+        textSize(size);
+        textStyle(BOLD);
+        textAlign(CENTER, CENTER);
+        text(word, x, y);
+      }
+    }
+
+    function getRealTextBounds(txt, fontName, fontSize, x, y) {
+      textScanLayer.clear();
+
+      textScanLayer.background(0, 0);
+      textScanLayer.fill(255);
+      textScanLayer.noStroke();
+      textScanLayer.textFont(fontName);
+      textScanLayer.textSize(fontSize);
+      textScanLayer.textStyle(BOLD);
+      textScanLayer.textAlign(CENTER, CENTER);
+      textScanLayer.text(txt, x, y);
+
+      textScanLayer.loadPixels();
+
+      let minX = width;
+      let minY = height;
+      let maxX = 0;
+      let maxY = 0;
+      let foundPixel = false;
+
+      for (let py = 0; py < height; py++) {
+        for (let px = 0; px < width; px++) {
+          let index = 4 * (py * width + px);
+          let alpha = textScanLayer.pixels[index + 3];
+
+          if (alpha > 10) {
+            if (px < minX) minX = px;
+            if (px > maxX) maxX = px;
+            if (py < minY) minY = py;
+            if (py > maxY) maxY = py;
+            foundPixel = true;
+          }
+        }
+      }
+
+      if (!foundPixel) {
+        return null;
+      }
+
+      return {
+        x: minX,
+        y: minY,
+        w: maxX - minX + 1,
+        h: maxY - minY + 1
+      };
+    }
+
+    function savePoster() {
+      saveCanvas("personalised-poster", "png");
+    }
+  </script>
+
+</body>
+</html>
