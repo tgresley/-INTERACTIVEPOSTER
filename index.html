@@ -15,57 +15,57 @@
 
     @font-face {
       font-family: "Boucle";
-      src: url("/typefaces/boucle.otf") format("opentype");
+      src: url("./typefaces/boucle.otf") format("opentype");
     }
 
     @font-face {
       font-family: "Bunny";
-      src: url("/typefaces/bunny.otf") format("opentype");
+      src: url("./typefaces/bunny.otf") format("opentype");
     }
 
     @font-face {
       font-family: "Carrepair";
-      src: url("/typefaces/carrepair.otf") format("opentype");
+      src: url("./typefaces/carrepair.otf") format("opentype");
     }
 
     @font-face {
       font-family: "Dindong";
-      src: url("/typefaces/dindong.woff") format("woff");
+      src: url("./typefaces/dindong.woff") format("woff");
     }
 
     @font-face {
       font-family: "Marsha";
-      src: url("/typefaces/marsha.otf") format("opentype");
+      src: url("./typefaces/marsha.otf") format("opentype");
     }
 
     @font-face {
       font-family: "Insolent";
-      src: url("/typefaces/insolent.woff") format("woff");
+      src: url("./typefaces/insolent.woff") format("woff");
     }
 
     @font-face {
       font-family: "Nudles";
-      src: url("/typefaces/nudles.woff") format("woff");
+      src: url("./typefaces/nudles.woff") format("woff");
     }
 
     @font-face {
       font-family: "Picnic";
-      src: url("/typefaces/picnic.woff") format("woff");
+      src: url("./typefaces/picnic.woff") format("woff");
     }
 
     @font-face {
       font-family: "Readme";
-      src: url("/typefaces/readme.woff") format("woff");
+      src: url("./typefaces/readme.woff") format("woff");
     }
 
     @font-face {
       font-family: "star";
-      src: url("/typefaces/star.otf") format("opentype");
+      src: url("./typefaces/star.otf") format("opentype");
     }
 
     @font-face {
       font-family: "DegularSB";
-      src: url("/typefaces/degularsb.otf") format("opentype");
+      src: url("./typefaces/degularsb.otf") format("opentype");
     }
 
     :root {
@@ -83,11 +83,6 @@
       background: #ffffff;
       font-family: "DegularSB", Arial, Helvetica, sans-serif;
       color: #111;
-
-      /*
-        Three equal logic zones:
-        left controls | poster centre | right button zone
-      */
       display: grid;
       grid-template-columns: var(--panel-width) 1fr var(--panel-width);
     }
@@ -249,8 +244,8 @@
       width: clamp(105px, 10vw, 170px);
       height: clamp(105px, 10vw, 170px);
       padding: 34px 24px;
-      left: 26vw;
-      bottom: 4vh;
+      left: 24vw;
+      bottom: 12vh;
     }
 
     .randomise-button {
@@ -259,25 +254,20 @@
       width: clamp(120px, 10vw, 210px);
       height: clamp(120px, 10vw, 210px);
       padding: 44px 30px;
-      left: 23vw;
+      left: 30vw;
       top: 10vh;
     }
 
     .asterisk-button {
-      --button-shape: url("/asterisks/asterisk3.svg");
+      --button-shape: url("./asterisks/asterisk3.svg");
       --button-colour: #000000;
       width: clamp(105px, 14vw, 190px);
       height: clamp(105px, 14vw, 190px);
       padding: 34px 24px;
-      right: 20vw;
+      right: 12vw;
       top: 32vh;
     }
 
-    /*
-      SAVE BUTTON:
-      Same visual width as the left panel content.
-      Same inset from the right side as the controls have from the left side.
-    */
     .floating-buttons button.save-floating-button {
       width: calc(var(--panel-width) - var(--panel-padding) * 2);
       height: auto;
@@ -335,10 +325,6 @@
       font-size: 14px;
     }
 
-    /*
-      Smaller screens:
-      Keep the layout usable instead of crushing the poster.
-    */
     @media (max-width: 900px) {
       :root {
         --panel-width: 240px;
@@ -572,17 +558,21 @@
 
     let logoColourInput;
 
+    /*
+      Background files.
+      Change .jpeg to .jpg here if your actual files are .jpg.
+    */
     let bgImageFiles = [
-      "/background/amandalapore.jpeg",
-      "/background/claudecahun.jpeg",
-      "/background/crystallove.jpeg",
-      "/background/gradient1.jpeg",
-      "/background/gradient2.jpeg",
-      "/background/greerlankton.jpeg",
-      "/background/kingmollasses.jpeg",
-      "/background/MARSHA.jpeg",
-      "/background/reederickson.jpeg",
-      "/background/rihannaleejorda.jpeg"
+      "./background/amandalapore.jpeg",
+      "./background/claudecahun.jpeg",
+      "./background/crystallove.jpeg",
+      "./background/gradient1.jpeg",
+      "./background/gradient2.jpeg",
+      "./background/greerlankton.jpeg",
+      "./background/kingmollasses.jpeg",
+      "./background/MARSHA.jpeg",
+      "./background/reederickson.jpeg",
+      "./background/rihannaleejorda.jpeg"
     ];
 
     let bgImages = [];
@@ -628,6 +618,11 @@
     let showAsterisk = true;
 
     function preload() {
+      /*
+        Background images are NOT preloaded.
+        They are loaded only when selected.
+      */
+
       asteriskImages[0] = loadImage("./asterisks/asterisk1.svg");
       asteriskImages[1] = loadImage("./asterisks/asterisk2.svg");
       asteriskImages[2] = loadImage("./asterisks/asterisk3.svg");
@@ -660,10 +655,12 @@
       }
 
       isBgLoading = true;
+      currentBgImage = null;
 
-      bgImages[index] = loadImage(
+      loadImage(
         bgImageFiles[index],
         function (loadedImg) {
+          bgImages[index] = loadedImg;
           currentBgImage = loadedImg;
           currentBgIndex = index;
           isBgLoading = false;
@@ -671,6 +668,7 @@
         function () {
           console.error("Could not load background image:", bgImageFiles[index]);
           isBgLoading = false;
+          currentBgImage = null;
         }
       );
     }
@@ -724,12 +722,6 @@
 
     function updateResponsiveLayout() {
       let panelWidth = 300;
-
-      /*
-        Since the body now has:
-        left panel + poster area + right save-button zone,
-        subtract both side zones.
-      */
       let availableW = windowWidth - panelWidth * 2;
       let availableH = windowHeight;
 
