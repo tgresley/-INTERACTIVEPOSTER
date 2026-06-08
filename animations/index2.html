@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T*art Animations</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .media-container {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video,
+    img {
+      width: 600px;
+      height: auto;
+    }
+
+    video {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="media-container">
+    <video src="stacker_2_1.mp4" autoplay muted loop playsinline></video>
+    <video src="stack.mp4" autoplay muted loop playsinline></video>
+  </div>
+</body>
+</html>
