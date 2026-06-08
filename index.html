@@ -83,6 +83,7 @@
       background: #ffffff;
       font-family: "DegularSB", Arial, Helvetica, sans-serif;
       color: #111;
+      cursor: none;
       display: grid;
       grid-template-columns: var(--panel-width) 1fr var(--panel-width);
     }
@@ -172,6 +173,31 @@
       height: var(--canvas-display-height) !important;
       display: block;
       box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    }
+
+
+    /* Erase overlay sits above the poster maker without affecting the p5 poster canvas */
+    #overlayCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+      width: 100vw !important;
+      height: 100vh !important;
+      box-shadow: none !important;
+      display: block;
+    }
+
+    #overlayCursor {
+      position: fixed;
+      width: 360px;
+      height: 360px;
+      border: 2px solid black;
+      border-radius: 50%;
+      z-index: 120;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: difference;
     }
 
     .floating-buttons {
@@ -540,6 +566,10 @@
       <span class="save-button-type">Save !</span>
     </button>
   </div>
+
+  <canvas id="overlayCanvas"></canvas>
+  <div id="overlayCursor"></div>
+
 
   <script>
     let fontSelect1;
@@ -1068,6 +1098,122 @@
     function savePoster() {
       saveCanvas("personalised-poster", "png");
     }
+
+
+    /* ERASE OVERLAY ---------------------------------------------------------
+       Put overlay.png in the same folder as this HTML file.
+       The overlay sits above the whole interface and erases away as the mouse moves.
+    */
+    const overlayCanvas = document.getElementById("overlayCanvas");
+    const overlayCtx = overlayCanvas.getContext("2d");
+    const overlayCursor = document.getElementById("overlayCursor");
+
+    const overlayImage = new Image();
+    overlayImage.src = "overlay.png";
+
+    const eraseRadius = 180;
+
+    let lastEraseX = null;
+    let lastEraseY = null;
+    let overlayLoaded = false;
+
+    function resizeOverlayCanvas() {
+      overlayCanvas.width = window.innerWidth;
+      overlayCanvas.height = window.innerHeight;
+
+      if (overlayLoaded) {
+        drawOverlayImage();
+      }
+    }
+
+    function drawOverlayImage() {
+      overlayCtx.globalCompositeOperation = "source-over";
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+      const canvasRatio = overlayCanvas.width / overlayCanvas.height;
+      const imageRatio = overlayImage.width / overlayImage.height;
+
+      let drawWidth;
+      let drawHeight;
+      let drawX;
+      let drawY;
+
+      if (imageRatio > canvasRatio) {
+        drawHeight = overlayCanvas.height;
+        drawWidth = drawHeight * imageRatio;
+        drawX = (overlayCanvas.width - drawWidth) / 2;
+        drawY = 0;
+      } else {
+        drawWidth = overlayCanvas.width;
+        drawHeight = drawWidth / imageRatio;
+        drawX = 0;
+        drawY = (overlayCanvas.height - drawHeight) / 2;
+      }
+
+      overlayCtx.drawImage(overlayImage, drawX, drawY, drawWidth, drawHeight);
+    }
+
+    function eraseOverlaySmoothly(x, y) {
+      if (!overlayLoaded) return;
+
+      overlayCtx.globalCompositeOperation = "destination-out";
+      overlayCtx.lineWidth = eraseRadius * 2;
+      overlayCtx.lineCap = "round";
+      overlayCtx.lineJoin = "round";
+
+      overlayCtx.beginPath();
+
+      if (lastEraseX === null || lastEraseY === null) {
+        overlayCtx.moveTo(x, y);
+      } else {
+        overlayCtx.moveTo(lastEraseX, lastEraseY);
+      }
+
+      overlayCtx.lineTo(x, y);
+      overlayCtx.stroke();
+
+      overlayCtx.beginPath();
+      overlayCtx.arc(x, y, eraseRadius, 0, Math.PI * 2);
+      overlayCtx.fill();
+
+      overlayCtx.globalCompositeOperation = "source-over";
+
+      lastEraseX = x;
+      lastEraseY = y;
+    }
+
+    window.addEventListener("mousemove", function(event) {
+      const x = event.clientX;
+      const y = event.clientY;
+
+      overlayCursor.style.left = x + "px";
+      overlayCursor.style.top = y + "px";
+
+      eraseOverlaySmoothly(x, y);
+    });
+
+    window.addEventListener("mouseleave", function() {
+      lastEraseX = null;
+      lastEraseY = null;
+    });
+
+    window.addEventListener("resize", function() {
+      lastEraseX = null;
+      lastEraseY = null;
+      resizeOverlayCanvas();
+    });
+
+    overlayImage.onload = function() {
+      overlayLoaded = true;
+      resizeOverlayCanvas();
+    };
+
+    overlayImage.onerror = function() {
+      console.error("Could not load overlay.png. Make sure it is in the same folder as this HTML file.");
+    };
+
+    resizeOverlayCanvas();
+
   </script>
 
 </body>
